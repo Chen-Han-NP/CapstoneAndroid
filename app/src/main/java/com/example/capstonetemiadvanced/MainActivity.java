@@ -1,5 +1,6 @@
 package com.example.capstonetemiadvanced;
 
+/*
 import static fi.iki.elonen.NanoHTTPD.MIME_PLAINTEXT;
 import static fi.iki.elonen.NanoHTTPD.newFixedLengthResponse;
 
@@ -228,4 +229,144 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+}*/
+
+
+
+import android.app.Activity;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.util.Base64;
+import android.util.Log;
+import android.view.View;
+import android.view.Window;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AppCompatActivity;
+
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+
+import fi.iki.elonen.NanoHTTPD;
+
+
+public class MainActivity extends AppCompatActivity {
+
+
+    private WebView webView = null;
+    private MainActivity.WebServer server;
+    public String url = "https://chen-han-np.github.io/Capstone-TEMI-Website-Demo/";
+    public boolean free;
+
+    public TextView name;
+    public ImageButton reload;
+    public ImageButton back;
+    public Button home;
+    public int portNumber = 8080;
+    // Temi current level: 2
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        server = new MainActivity.WebServer();
+        try {
+            server.start();
+        } catch (IOException ioe) {
+            Log.w("Httpd", "The server could not start.");
+        }
+        Log.w("Httpd", "Web server initialized.");
+
+        setContentView(R.layout.activity_main);
+        reload = (ImageButton) findViewById(R.id.refresh);
+        back = (ImageButton) findViewById(R.id.back);
+
+        this.webView = (WebView) findViewById(R.id.webView);
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+
+        //---- For Website hosting with INTERNET-----
+        WebViewClientImpl webViewClient = new WebViewClientImpl(this);
+        webView.setWebViewClient(webViewClient);
+        webView.loadUrl(url);
+
+        reload.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                webView.reload();
+            }
+        });
+
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                webView.goBack();
+            }
+        });
+    }
+
+    private class WebServer extends NanoHTTPD {
+        public WebServer()
+        {
+            super(portNumber);
+        }
+        @Override
+        public Response serve(IHTTPSession session) {
+            if (session.getMethod() == Method.POST) {
+                try {
+                    final HashMap<String, String> map = new HashMap<String, String>();
+                    session.parseBody(map);
+                    String data = map.get("postData");
+                    Log.w("Httpd", data);
+                    JSONObject json = new JSONObject(data);
+
+                    Context ctx=getApplicationContext();
+
+                    Intent intent = new Intent(ctx, GuideActivity.class);
+                    intent.putExtra("bookId", json.getString("bookid"));
+                    intent.putExtra("level", json.getString("level"));
+                    intent.putExtra("shelfNo", json.getString("shelfno"));
+                    intent.putExtra("bookName", json.getString("bookname"));
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); // You need this if starting
+                    // the activity from a service
+                    intent.setAction(Intent.ACTION_MAIN);
+                    intent.addCategory(Intent.CATEGORY_LAUNCHER);
+                    intent.putExtra("free", false);
+                    intent.putExtra("difflevel", true);
+                    startActivity(intent);
+
+                    return newFixedLengthResponse("Request succeeded.");
+                } catch (IOException | ResponseException | JSONException e) {
+                    // handle
+                    e.printStackTrace();
+                }
+            }
+
+            return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT,
+                    "The requested resource does not exist");
+        }
+    }
 }
