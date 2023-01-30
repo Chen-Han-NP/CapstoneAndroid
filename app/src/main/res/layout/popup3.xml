@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="#2B2A2A">
+
+    <TextView
+        android:id="@+id/popup3_text"
+        android:layout_width="731dp"
+        android:layout_height="130dp"
+        android:layout_centerInParent="true"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="30dp"
+        android:layout_marginEnd="30dp"
+        android:layout_marginBottom="30dp"
+        android:lineSpacingExtra="12sp"
+        android:text="Your book is located at Level [] \nPlease kindly wait at the Level [] staircase, \nwhere another TEMI will serve you!"
+        android:textAlignment="center"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp" />
+
+</RelativeLayout>

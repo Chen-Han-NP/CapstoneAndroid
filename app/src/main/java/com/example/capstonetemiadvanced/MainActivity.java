@@ -328,11 +328,14 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+
     private class WebServer extends NanoHTTPD {
+
         public WebServer()
         {
             super(portNumber);
         }
+
         @Override
         public Response serve(IHTTPSession session) {
             if (session.getMethod() == Method.POST) {
