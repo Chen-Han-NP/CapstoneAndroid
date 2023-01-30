@@ -5,7 +5,7 @@
     android:background="#2B2A2A">
 
     <TextView
-        android:id="@+id/text"
+        android:id="@+id/popup3_text"
         android:layout_width="731dp"
         android:layout_height="130dp"
         android:layout_centerInParent="true"
@@ -17,6 +17,6 @@
         android:text="Your book is located at Level [] \nPlease kindly wait at the Level [] staircase, \nwhere another TEMI will serve you!"
         android:textAlignment="center"
         android:textColor="#FFFFFF"
-        android:textSize="22sp" />
+        android:textSize="18sp" />
 
 </RelativeLayout>
