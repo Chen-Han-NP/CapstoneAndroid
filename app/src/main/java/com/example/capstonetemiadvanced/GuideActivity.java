@@ -58,9 +58,9 @@ import fi.iki.elonen.NanoHTTPD;
 public class GuideActivity extends AppCompatActivity {
 
     private WebServer server;
-    public String goserver = "http://192.168.43.244:8080";
+    public String goserver = "http://192.168.43.240:8080";
     public int portNumber = 8080;
-    public String levelNo = "3"; //TEMI current level
+    public String levelNo = "2"; //TEMI current level
     public String level; // Level from the req URL
     public String shelfNo; // Shelf No from the req URL
     public String bookId; // Bookid from the req URL
@@ -146,7 +146,8 @@ public class GuideActivity extends AppCompatActivity {
                 bookidtxt.setText(bookId);
                 taskfinishtxt.setText("We've reached shelf " + shelfNo + "! Your book should be nearby :)");
 
-
+/*
+                // Rest DB
                 String requestUrl = "https://capstonetemi-3ec7.restdb.io/rest/book-history";
                 JSONObject postData = new JSONObject();
                 try {
@@ -183,11 +184,12 @@ public class GuideActivity extends AppCompatActivity {
                 RequestQueue namerequestQueue = Volley.newRequestQueue(GuideActivity.this);
                 namerequestQueue.add(jsonObjectRequest);
 
+
+ */
                 }
             // For different Level TEMIs
             else{
-                /*
-                Log.v("suck", "bruh");
+
                 ActivityResultLauncher<Intent> imageActivityResultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
                         new ActivityResultCallback<ActivityResult>() {
                             @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -195,8 +197,6 @@ public class GuideActivity extends AppCompatActivity {
                             public void onActivityResult(ActivityResult result) {
                                 if (result.getResultCode() == Activity.RESULT_OK) {
                                     imageReceived = BitmapFactory.decodeFile(currentphotopath);
-
-
                                     // inflate the layout of the popup window
 
                                     LayoutInflater inflater = LayoutInflater.from(GuideActivity.this);
@@ -311,7 +311,7 @@ public class GuideActivity extends AppCompatActivity {
                                         try{
                                             File imageFile = File.createTempFile(fileName, ".jpg", storageDirectory);
                                             currentphotopath = imageFile.getAbsolutePath();
-                                            Uri imageUri = FileProvider.getUriForFile(GuideActivity.this, "com.example.capstone_temi.fileprovider", imageFile);
+                                            Uri imageUri = FileProvider.getUriForFile(GuideActivity.this, "com.example.capstonetemiadvanced.fileprovider", imageFile);
                                             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                                             intent.putExtra(MediaStore.EXTRA_OUTPUT,imageUri);
                                             imageActivityResultLauncher.launch(intent);
@@ -327,9 +327,8 @@ public class GuideActivity extends AppCompatActivity {
                             }
                         }.start();
 
-                 */
-
                 }
+
             } else{
             bookId = appLinkIntent.getStringExtra("bookId");
             level = appLinkIntent.getStringExtra("level");
