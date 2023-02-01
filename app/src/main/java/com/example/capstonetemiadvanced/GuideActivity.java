@@ -111,6 +111,14 @@ public class GuideActivity extends AppCompatActivity {
             }
         });
     }
+/*
+    @Override
+    protected void onStop() {
+        super.onStop();
+        server.stop();
+    }
+
+ */
 
     @Override
     protected void onNewIntent(Intent intent) {
@@ -128,7 +136,7 @@ public class GuideActivity extends AppCompatActivity {
         String vbookName = appLinkIntent.getStringExtra("verifiedBookName");
 
         // This code is ran through clicking of url + same level
-        if(appLinkData != null || !vbookId.equals(null)){
+        if(appLinkData != null){
 
             // "http://temibot.com/level/level=3&shelfno=1&bookname=Michelle%20Obama's%20Life%20%26%20Experience&bookid=E909%2E%20O24%20O12%20PBK"
             String rawdata = appLinkData.getLastPathSegment();
@@ -257,12 +265,18 @@ public class GuideActivity extends AppCompatActivity {
                                         JsonObjectRequest wronglevelRequest = new JsonObjectRequest(Request.Method.POST, wronglevelUrl, bookData, new Response.Listener<JSONObject>() {
                                             @Override
                                             public void onResponse(JSONObject response) {
-                                                //String res = response.toString();
-                                                //String rescode = response.getString("response_code");
+                                                String res = response.toString();
+                                                String rescode = null;
+                                                try {
+                                                    rescode = response.getString("response_code");
+                                                } catch (JSONException e) {
+                                                    e.printStackTrace();
+                                                }
 
-//                                                    if (rescode.equals("409")){
-//                                                        Toast.makeText(getApplicationContext(),res,Toast.LENGTH_SHORT).show();
-//                                                    }
+                                                if (rescode.equals("409")){
+                                                      Toast.makeText(getApplicationContext(),"Temi is busy right now. Please try again!",Toast.LENGTH_SHORT).show();
+
+                                                 }
                                             }
                                         }, new Response.ErrorListener() {
                                             @Override
@@ -361,7 +375,56 @@ public class GuideActivity extends AppCompatActivity {
                 }.start();
 
             }
-        }else{
+        }
+        else if(vbookId != null) {
+            Log.v("jin", vbookName);
+
+            booknametxt = findViewById(R.id.book_name);
+            bookidtxt = findViewById(R.id.book_id);
+            taskfinishtxt = findViewById(R.id.taskFinishTxt);
+
+            booknametxt.setText(vbookName);
+            bookidtxt.setText(vbookId);
+            taskfinishtxt.setText("We've reached shelf " + vshelfNo + "! Your book should be nearby :)");
+
+
+            String requestUrl = "https://capstonetemi-3ec7.restdb.io/rest/book-history";
+            JSONObject postData = new JSONObject();
+            try {
+                postData.put("level", vlevel);
+                postData.put("shelfno", vshelfNo);
+                postData.put("bookid", vbookId);
+                postData.put("bookname", vbookName);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, requestUrl, postData, new Response.Listener<JSONObject>() {
+                @Override
+                public void onResponse(JSONObject response) {
+
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    error.printStackTrace();
+                }
+            }) {
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError {
+                    Map<String, String> params = new HashMap<String, String>();
+                    params.put("content-type", "application/json");
+                    params.put("x-apikey", "2f9040149a55d3c3e6bfa3f356b6dec655137");
+                    params.put("cache-control", "no-cache");
+
+                    return params;
+                }
+            };
+
+            RequestQueue namerequestQueue = Volley.newRequestQueue(GuideActivity.this);
+            namerequestQueue.add(jsonObjectRequest);
+
+
+        } else{
             bookId = appLinkIntent.getStringExtra("bookId");
             level = appLinkIntent.getStringExtra("level");
             shelfNo = appLinkIntent.getStringExtra("shelfNo");
@@ -377,98 +440,10 @@ public class GuideActivity extends AppCompatActivity {
                     intent.putExtra("shelfNo", shelfNo);
                     intent.putExtra("bookId", bookId);
                     startActivity(intent);
-
-                    //robot.goTo("waitingarea");
-
-//                    robot.addOnGoToLocationStatusChangedListener(new OnGoToLocationStatusChangedListener() {
-//                        @Override
-//                        public void onGoToLocationStatusChanged(@NonNull String location, @NonNull String status, int id, @NonNull String desc) {
-//                            // If the TEMI is not returned to the home base yet
-//                            if (!location.equals("home base")) {
-//                                if (status.equals("complete")) {
-//                                    Intent intent = new Intent(GuideActivity.this, FaceVerificationActivity.class);
-//                                    startActivity(intent);
-//                                }
-//                            }
-//                        }
-//                    });
                 }
             }
         }
     }
-/*
-    public void popup() {
-
-        // inflate the layout of the popup window
-        LayoutInflater inflater = LayoutInflater.from(this.getApplicationContext());
-        View popupView = inflater.inflate(R.layout.popup, null);
-
-        // create the popup window
-        int width = LinearLayout.LayoutParams.WRAP_CONTENT;
-        int height = LinearLayout.LayoutParams.WRAP_CONTENT;
-        boolean focusable = true; // lets taps outside the popup also dismiss it
-        final PopupWindow popupWindow = new PopupWindow(popupView, width, height, focusable);
-
-        popupWindow.setOutsideTouchable(false);
-        popupWindow.setFocusable(false);
-
-        // show the popup window
-        // which view you pass in doesn't matter, it is only used for the window tolken
-        popupWindow.showAtLocation(this.findViewById(R.id.main), Gravity.BOTTOM, 0, 0);
-
-        Button yes = popupView.findViewById(R.id.yes);
-        Button no = popupView.findViewById(R.id.no);
-        answer = true;
-
-
-        CountDownTimer waitTimer;
-        TextView countdown = popupView.findViewById(R.id.timer);
-        waitTimer = new CountDownTimer(60000, 1000) {
-
-            public void onTick(long millisUntilFinished) {
-                int time =  Integer.parseInt(countdown.getText().toString()) - 1;
-                countdown.setText(String.valueOf(time));
-
-            }
-
-            public void onFinish() {
-
-                if(answer == true){
-                    answer = false;
-                    Intent launchIntent = new Intent(GuideActivity.this, MainActivity.class);
-                    startActivity(launchIntent);
-                    popupWindow.dismiss();
-                }
-
-            }
-        }.start();
-
-        yes.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                answer = false;
-                Intent launchIntent = new Intent(GuideActivity.this, MainActivity.class);
-                if (launchIntent != null) {
-                    startActivity(launchIntent);//null pointer check in case package name was not found
-                }
-            }
-        });
-        no.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                answer = false;
-                Intent launchIntent = new Intent(GuideActivity.this, MainActivity.class);
-                startActivity(launchIntent);
-                popupWindow.dismiss();
-
-            }
-        });
-
-
-    }
-
- */
-
 
     private boolean deleteTempFiles(File file) {
         if (file.isDirectory()) {

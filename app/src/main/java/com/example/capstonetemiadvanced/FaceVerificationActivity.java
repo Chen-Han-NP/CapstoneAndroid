@@ -51,6 +51,7 @@ public class FaceVerificationActivity extends AppCompatActivity {
     public TextView name;
     public ImageButton goBackBtn;
     public Button takePicBtn2;
+    public Button goToButton;
     public ActivityResultLauncher<Intent> imageActivityResultLauncher;
     public Bitmap imageReceived;
     private String currentphotopath;
@@ -70,6 +71,7 @@ public class FaceVerificationActivity extends AppCompatActivity {
 
         goBackBtn = (ImageButton) findViewById(R.id.backBtn2);
         takePicBtn2 = (Button) findViewById(R.id.takePicBtn2);
+        goToButton = (Button) findViewById(R.id.goToBook);
 
         server = new WebServer();
         try {
@@ -84,7 +86,6 @@ public class FaceVerificationActivity extends AppCompatActivity {
         level = appLinkIntent.getStringExtra("level");
         shelfNo = appLinkIntent.getStringExtra("shelfNo");
         bookName = appLinkIntent.getStringExtra("bookName");
-
 
         imageActivityResultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
                 new ActivityResultCallback<ActivityResult>() {
@@ -137,6 +138,7 @@ public class FaceVerificationActivity extends AppCompatActivity {
                                     @Override
                                     public void onErrorResponse(VolleyError error) {
                                         Log.v("jinyang", "qwerty");
+                                        Toast.makeText(getApplicationContext(),"Face not verified - try again.",Toast.LENGTH_SHORT).show();
                                         error.printStackTrace();
                                     }
                                 });
@@ -152,16 +154,21 @@ public class FaceVerificationActivity extends AppCompatActivity {
                                 File storageDirectory = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
                                 deleteTempFiles(storageDirectory);
                             }
-
-
-
-
-
                         }
                     }
-
                 });
 
+        goToButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(FaceVerificationActivity.this, GuideActivity.class);
+                intent.putExtra("verifiedBookName", bookName);
+                intent.putExtra("verifiedLevel", level);
+                intent.putExtra("verifiedShelfNo", shelfNo);
+                intent.putExtra("verifiedBookId", bookId);
+                startActivity(intent);
+            }
+        });
 
         takePicBtn2.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -172,7 +179,7 @@ public class FaceVerificationActivity extends AppCompatActivity {
                 try{
                     File imageFile = File.createTempFile(fileName, ".jpg", storageDirectory);
                     currentphotopath = imageFile.getAbsolutePath();
-                    Uri imageUri = FileProvider.getUriForFile(FaceVerificationActivity.this, "com.example.capstone_temi.fileprovider", imageFile);
+                    Uri imageUri = FileProvider.getUriForFile(FaceVerificationActivity.this, "com.example.capstonetemiadvanced.fileprovider", imageFile);
                     Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                     intent.putExtra(MediaStore.EXTRA_OUTPUT,imageUri);
                     imageActivityResultLauncher.launch(intent);
@@ -190,6 +197,12 @@ public class FaceVerificationActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        server.stop();
     }
 
     private boolean deleteTempFiles(File file) {
