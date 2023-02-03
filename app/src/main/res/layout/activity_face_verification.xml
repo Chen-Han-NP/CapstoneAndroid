@@ -46,10 +46,10 @@
         app:layout_constraintVertical_bias="0.271" />
 
     <Button
-        android:id="@+id/goToBook"
+        android:id="@+id/skipVerificationBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Go"
+        android:text="Skip Verification"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
