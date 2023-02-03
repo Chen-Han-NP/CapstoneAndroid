@@ -1,56 +1,35 @@
 package com.example.capstonetemiadvanced;
-import android.app.Activity;
-import android.content.ContentResolver;
+
+
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.net.Uri;
-import android.os.Build;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Base64;
 import android.util.Log;
 import android.view.View;
-import android.view.Window;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.TextView;
-
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-
-
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
-
 import fi.iki.elonen.NanoHTTPD;
 
+
 public class MainActivity extends AppCompatActivity {
+
 
     private WebView webView = null;
     private MainActivity.WebServer server;
     public String url = "https://chen-han-np.github.io/Capstone-TEMI-Website-Demo/";
-    public boolean free;
+
     public TextView name;
     public ImageButton reload;
     public ImageButton back;
-    public Button home;
     public int portNumber = 8080;
-    // Temi current level: 2
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +43,8 @@ public class MainActivity extends AppCompatActivity {
         Log.w("Httpd", "Web server initialized.");
 
         setContentView(R.layout.activity_main);
+
+        // Buttons for the browser
         reload = (ImageButton) findViewById(R.id.refresh);
         back = (ImageButton) findViewById(R.id.back);
 
@@ -71,10 +52,11 @@ public class MainActivity extends AppCompatActivity {
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
 
-        //---- For Website hosting with INTERNET-----
+        // Browser - need internet access
         WebViewClientImpl webViewClient = new WebViewClientImpl(this);
         webView.setWebViewClient(webViewClient);
         webView.loadUrl(url);
+
 
         reload.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -91,47 +73,82 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // When the user leaves main activity
+    @Override
+    protected void onStop() {
+        super.onStop();
+    }
 
+    // When the user comes back to the main activity
+    @Override
+    protected void onResume() {
+        super.onResume();
+        SharedPreferences sharedPreferences = getSharedPreferences("Busy", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean("busy", false);
+        editor.apply();
+    }
+
+    // Setting up the Nanohttpd server
     private class WebServer extends NanoHTTPD {
-
         public WebServer()
         {
-            super(portNumber);
+            super( portNumber );
         }
 
+        // -> Listening to any POST request from the Server
+        // -> Usually book detail from the server after calling /wronglevel at GuideActivity
         @Override
         public Response serve(IHTTPSession session) {
-            // Handle POST from /wronglevel from server
             if (session.getMethod() == Method.POST) {
-                try {
-                    final HashMap<String, String> map = new HashMap<String, String>();
-                    session.parseBody(map);
-                    String data = map.get("postData");
-                    Log.w("Httpd", data);
-                    JSONObject json = new JSONObject(data);
+                // Check if the user is at other activity at the moment
+                SharedPreferences sh = getSharedPreferences("Busy", MODE_PRIVATE);
+                Boolean isbusy = sh.getBoolean("busy", true);
+                if(!isbusy){
+                    // Storing data into SharedPreferences
+                    SharedPreferences sharedPreferences = getSharedPreferences("Busy",MODE_PRIVATE);
 
-                    Context ctx=getApplicationContext();
+                    // Creating an Editor object to edit(write to the file)
+                    SharedPreferences.Editor myEdit = sharedPreferences.edit();
 
-                    Intent intent = new Intent(ctx, GuideActivity.class);
-                    intent.putExtra("bookId", json.getString("bookid"));
-                    intent.putExtra("level", json.getString("level"));
-                    intent.putExtra("shelfNo", json.getString("shelfno"));
-                    intent.putExtra("bookName", json.getString("bookname"));
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); // You need this if starting
-                    // the activity from a service
-                    intent.setAction(Intent.ACTION_MAIN);
-                    intent.addCategory(Intent.CATEGORY_LAUNCHER);
-                    intent.putExtra("free", false);
-                    intent.putExtra("difflevel", true);
-                    startActivity(intent);
+                    // Storing the key and its value as the data fetched from edittext
 
-                    return newFixedLengthResponse("Request succeeded.");
-                } catch (IOException | ResponseException | JSONException e) {
-                    // handle
-                    e.printStackTrace();
+                    // Set as busy as it is now going to navigate to GuideActivity
+                    myEdit.putBoolean("busy", true);
+                    myEdit.apply();
+                    try {
+                        final HashMap<String, String> map = new HashMap<String, String>();
+                        session.parseBody(map);
+                        String data = map.get("postData");
+                        Log.w("Httpd", data);
+                        JSONObject json = new JSONObject(data);
+
+                        Context ctx=getApplicationContext();
+                        Intent intent = new Intent(ctx, GuideActivity.class);
+                        intent.putExtra("bookId", json.getString("bookid"));
+                        intent.putExtra("level", json.getString("level"));
+                        intent.putExtra("shelfNo", json.getString("shelfno"));
+                        intent.putExtra("bookName", json.getString("bookname"));
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); // You need this if starting
+
+                        // the activity from a service
+                        intent.setAction(Intent.ACTION_MAIN);
+                        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+                        intent.putExtra("difflevel", true);
+                        startActivity(intent);
+
+                        // Return to the server successful message
+                        return newFixedLengthResponse("Request succeeded.");
+
+                    } catch (IOException | ResponseException | JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+                //  if the robot is BUSY
+                else{
+                    return newFixedLengthResponse(Response.Status.CONFLICT, MIME_PLAINTEXT, "This Temi is currently in use, come back later!");
                 }
             }
-
             return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT,
                     "The requested resource does not exist");
         }
